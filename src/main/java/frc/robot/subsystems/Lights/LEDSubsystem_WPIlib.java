@@ -45,7 +45,7 @@ public class LEDSubsystem_WPIlib extends SubsystemBase {
     // strip
     // m_right = m_ledbuffer.createView(kLength/2, kLength - 1).reversed(); //Right
     // side of the LED strip
-    m_led.setLength(kLength);
+    m_led.setLength(m_ledBuffer.getLength());
     m_led.setData(m_ledbuffer);
     m_led.start();
 
@@ -55,7 +55,7 @@ public class LEDSubsystem_WPIlib extends SubsystemBase {
     // Note: Other default patterns could be used instead!
     running_AnimatedPattern = false;
     animatedPattern = null;
-    setDefaultCommand(LED_Reset().withName("LED_Reset"));
+    //setDefaultCommand(LED_Reset().withName("LED_Reset"));
     // setDefaultCommand(runPattern(LEDPattern.solid(Color.kBlack), false).withName("Off"));
   }
 
@@ -70,8 +70,8 @@ public class LEDSubsystem_WPIlib extends SubsystemBase {
   /**
    * Resetting LED strip - LES set to solid black.
    */
-  public Command LED_Reset() {
-    return run(() -> runPattern(LEDPattern.solid(Color.kBlack), false));
+  public void LED_Reset() {
+    return runPattern(LEDPattern.solid(Color.kBlack), false);
   }
 
   /**
