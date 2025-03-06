@@ -71,7 +71,7 @@ public class LEDSubsystem_WPIlib extends SubsystemBase {
    * Resetting LED strip - LES set to solid black.
    */
   public void LED_Reset() {
-    return runPattern(LEDPattern.solid(Color.kBlack), false);
+    runPattern(LEDPattern.solid(Color.kBlack), false);
   }
 
   /**
