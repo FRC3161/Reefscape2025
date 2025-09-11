@@ -243,6 +243,17 @@ public final class Constants {
         public static double[] armSGV = new double[] { 0.0, 0.001, 0.0 }; // Static, Gravity, and Velocity gains
         public static double[] armPID = new double[] { 1.47, 0, 0f }; // Arm PID values
 
+        public static double INTAKE_SETPOINT;
+        public static double L1_CORAL_SETPOINT;
+        public static double L2_CORAL_SETPOINT;
+        public static double L2_ALGAE_SETPOINT;
+        public static double L3_CORAL_BATTERY_SETPOINT;
+        public static double L3_CORAL_PIVOT_SETPOINT;
+        public static double L3_ALGAE_SETPOINT;
+        public static double L4_CORAL_BATTERY_SETPOINT;
+        public static double L4_CORAL_PIVOT_SETPOINT;
+        public static double ALGAE_BARGE_SETPOINT;
+        public static double IDLE_SETPOINT;
         // Arm's polynomial regression (useed to predict distances from speaker)
         // public static final PolynomialRegression
         // armAngleInterpolationPolynominalRegression = new PolynomialRegression(

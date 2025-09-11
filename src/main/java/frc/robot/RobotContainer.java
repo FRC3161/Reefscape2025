@@ -177,14 +177,22 @@ public class RobotContainer {
                                                 .finallyDo(this::intakeIdle)));
 
                 driver.rightBumper().whileTrue(new SequentialCommandGroup(
-                                new ToAngle(() -> Arm.getEncoderPosition().getRadians(), arm),
-                                new ParallelCommandGroup(
-                                                new ToWristAngle(() -> Units.degreesToRadians(34), wrist),
-                                                new ToAngle(() -> Units.degreesToRadians(-6), arm),
-                                                new IntakeIn(intake),
-                                                new ElevateLevel(elevator, ElevateMode.HP))
-                                                .finallyDo(this::intakeIdle)));
+                        new ToAngle(() -> Arm.getEncoderPosition().getRadians(), arm),
+                        new ParallelCommandGroup(
+                                        new ToWristAngle(() -> Units.degreesToRadians(60), wrist), //used to be 60
+                                        new ToAngle(() -> Units.degreesToRadians(1.8), arm), //used to be 1.8
+                                        // new IntakeIn(intake),
+                                        new ElevateLevel(elevator, ElevateMode.L2))));
+                driver.rightBumper().onFalse(getIntakeIdleSeq());
 
+                // driver.rightBumper().whileTrue(new SequentialCommandGroup(
+                //                 new ToAngle(() -> Arm.getEncoderPosition().getRadians(), arm),
+                //                 new ParallelCommandGroup(
+                //                                 new ToWristAngle(() -> Units.degreesToRadians(34), wrist),
+                //                                 new ToAngle(() -> Units.degreesToRadians(-6), arm),
+                //                                 new IntakeIn(intake),
+                //                                 new ElevateLevel(elevator, ElevateMode.HP))
+                //                                 .finallyDo(this::intakeIdle)));
                 // 9659 inspired align
                 driver.leftTrigger().whileTrue(
                                 drivetrain.defer(
@@ -221,11 +229,11 @@ public class RobotContainer {
                 operator.rightBumper().and(() -> drivetrain.decideScoringMode() == ScoringMode.NORMAL).and(operator.y())
                                 .whileTrue(new IntakeOutVar(intake, () -> 0.7));
 
-                operator.rightBumper().and(operator.b()).and(operator.rightTrigger()).whileTrue(
-                                new IntakeOut2(intake));
+                // operator.rightBumper().and(operator.b()).and(operator.rightTrigger()).whileTrue(
+                //                 new IntakeOut2(intake));
 
-                operator.rightBumper().and(operator.a()).and(operator.rightTrigger()).whileTrue(
-                                new IntakeOut2(intake));
+                // operator.rightBumper().and(operator.a()).and(operator.rightTrigger()).whileTrue(
+                //                 new IntakeOut2(intake));
 
                 // operator.x().onTrue(new SetSolidColor(wpiLights, Color.kMagenta));
 
@@ -355,6 +363,7 @@ public class RobotContainer {
                                                 new ToWristAngle(() -> Units.degreesToRadians(32), wrist)), // 36.5
                                 new ElevateLevel(elevator, ElevateMode.L4).withTimeout(0.7),
                                 new IntakeOut(intake).withTimeout(0.5)).finallyDo(this::idle));
+
                 // operator.leftTrigger().whileTrue(
                 // new SequentialCommandGroup(
                 // new ParallelCommandGroup(

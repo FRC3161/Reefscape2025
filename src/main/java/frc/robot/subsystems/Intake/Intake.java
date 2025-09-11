@@ -29,11 +29,33 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 public class Intake extends SubsystemBase {
 
+    private enum WantedState {
+        SCORE_L1,
+        SCORE_BATTERY_SIDE,
+        SCORE_PIVOT_SIDE,
+        SCORE_ALGAE,
+        INTAKE,
+        OFF
+    }
+
+    private enum SystemState {
+        SCORING_L1,
+        SCORING_BATTERY_SIDE,
+        SCORING_PIVOT_SIDE,
+        SCORING_ALGAE,
+        INTAKING,
+        OFF
+    }
+
     private static TalonFX intake = new TalonFX(61);
 
     private static MotorOutputConfigs intakeConfig = new MotorOutputConfigs();
 
     private static DigitalInput beamBreak = new DigitalInput(1);
+
+    private WantedState wantedState = WantedState.OFF;
+
+    private SystemState systemState = SystemState.OFF;
 
     private static Timer pulseTimer = new Timer();
     public static boolean modified = false;
@@ -49,43 +71,85 @@ public class Intake extends SubsystemBase {
 
     public void setupMotors() {
         // Apply Configs
-
         intake.setNeutralMode(NeutralModeValue.Brake);
         intakeConfig.Inverted = InvertedValue.Clockwise_Positive;
     }
 
     public void hpIntake(double value) {
         if (beamBreak.get()) {
-            // follower.set(value);
             intake.set(value);
         } else {
-            // leader.set(value);
-            // follower.set(0);
             intake.set(0);
         }
 
     }
 
-    public void setModify(boolean yesOrNo) {
-
-    }
-
     // Outtakes through the black wheels
     public void outTake(double value) {
-        // follower.set(value);
-
         intake.set(value);
-
     }
 
     public void stop() {
-        // leader.set(0);
-        // follower.set(0);
-
         intake.set(0);
+    }
+
+    private SystemState changeCurrentState() {
+        return switch (wantedState) {
+            case SCORE_L1: {
+                yield systemState = systemState.SCORING_L1;
+            }
+            case SCORE_BATTERY_SIDE: {
+                yield systemState = systemState.SCORING_BATTERY_SIDE;
+            }
+            case SCORE_PIVOT_SIDE: {
+                yield systemState = systemState.SCORING_PIVOT_SIDE;
+            }
+            case SCORE_ALGAE: {
+                yield systemState = systemState.SCORING_ALGAE;
+            }
+            case INTAKE: {
+                yield systemState = systemState.INTAKING;
+            }
+            case OFF: { 
+                yield systemState = systemState.OFF;
+            }
+            default: {
+                yield systemState.OFF;
+            }
+        }; 
+    }
+
+    private void applyState() {
+        double motorSpeed = 0.0;
+
+        switch (systemState) {
+            case SCORING_L1:
+                motorSpeed = .2;
+            case SCORING_BATTERY_SIDE:
+                motorSpeed = -0.7;
+            case SCORING_PIVOT_SIDE:
+                motorSpeed = 0.7;
+            case SCORING_ALGAE:
+                motorSpeed = 0.7;
+            case INTAKING:
+                if(!hasCoral()) {
+                    motorSpeed = -0.4;
+                } else {
+                    motorSpeed = 0.0;
+                }
+            case OFF:
+                motorSpeed = 0.0;
+        }
+        intake.set(motorSpeed);    
+    }
+
+    public void setWantedState(WantedState desiredState) {
+        this.wantedState = desiredState;
     }
 
     @Override
     public void periodic() {
+        systemState = changeCurrentState();
+        applyState();
     }
 }

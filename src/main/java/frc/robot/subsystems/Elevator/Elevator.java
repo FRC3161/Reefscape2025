@@ -17,8 +17,37 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.ElevatorConstants;
 import frc.robot.Constants.ElevatorConstants.ElevateMode;
+import frc.robot.subsystems.Intake.Intake;
 
 public class Elevator extends SubsystemBase {
+  //TODO:Add intake, homing and reset
+  private enum WantedState {
+    OFF,
+    L1,
+    L2_CORAL,
+    L2_ALGAE,
+    L3_CORAL_BATTERY,
+    L3_CORAL_PIVOT,
+    L3_ALGAE,
+    L4_CORAL_BATTERY,
+    L4_CORAL_PIVOT,
+    ALGAE_BARGE
+  }
+
+  private enum SystemState {
+    OFF,
+    GOING_L1,
+    GOING_L2_CORAL,
+    GOING_L2_ALGAE,
+    GOING_L3_CORAL_BATTERY,
+    GOING_L3_CORAL_PIVOT,
+    GOING_L3_ALGAE,
+    GOING_L4_CORAL_BATTERY,
+    GOING_L4_CORAL_PIVOT,
+    GOING_ALGAE_BARGE
+  }
+
+  public Intake intake = new Intake(); 
 
   public SparkMax leftElevatorMotor = new SparkMax(ElevatorConstants.leftElevatorMotorID, MotorType.kBrushless);
   public SparkMax rightElevatorMotor = new SparkMax(ElevatorConstants.rightElevatorMotorID, MotorType.kBrushless);
@@ -40,11 +69,9 @@ public class Elevator extends SubsystemBase {
   public double elevatorSetpoint = 1;
   private double positionRateOfChange = 0;
 
-  // private double leftPower = 0;
-  // private double rightPower = 0;
   private ElevateMode elevateMode = ElevateMode.OFF;
-  // private boolean isLeftDone = false;
-  // private boolean isRightDone = false;
+  private WantedState wantedState = WantedState.OFF;
+  private SystemState systemState = SystemState.OFF;
 
   /* Tunable Values */
   private LoggedTunableNumber elevatorP = new LoggedTunableNumber("elevatorP",
@@ -70,13 +97,6 @@ public class Elevator extends SubsystemBase {
     // encoderLeft = leftElevatorMotor.getEncoder();
     resetEncoders();
 
-  }
-
-  private static enum States {
-    BADBADBAD,
-    OKAYUP,
-    OKAYDOWN,
-    GOOD
   }
 
   private void setupMotors() {
@@ -168,24 +188,90 @@ public class Elevator extends SubsystemBase {
     // }
   }
 
-  public States outOfBounds(double encoderValue) {
-    if (encoderValue <= ElevatorConstants.min) {
-      return States.BADBADBAD;
-    } else if (encoderValue <= ElevatorConstants.desiredMin) {
-      return States.OKAYUP;
-    } else if (encoderValue < ElevatorConstants.desiredMax) {
-      return States.GOOD;
-    } else if (encoderValue < ElevatorConstants.max) {
-      return States.OKAYDOWN;
-    } else if (encoderValue >= ElevatorConstants.max) {
-      return States.BADBADBAD;
-    } else {
-      return States.BADBADBAD;
-    }
+  private SystemState changeCurrentSystemState() {
+    return 
+      switch (wantedState) {
+        case OFF:
+          yield SystemState.OFF;
+        case L1:
+          if (intake.hasCoral()) {
+            yield SystemState.GOING_L1;
+          } else {
+            yield SystemState.OFF;
+          }
+        case L2_CORAL:
+          if (intake.hasCoral()) {
+            yield SystemState.GOING_L2_CORAL;
+          } else {
+            yield SystemState.OFF;
+          }
+        case L2_ALGAE:
+          yield SystemState.GOING_L2_ALGAE;
+        case L3_CORAL_BATTERY:
+          if (intake.hasCoral()) {
+            yield SystemState.GOING_L3_CORAL_BATTERY;
+          } else {
+            yield SystemState.OFF;
+          }
+        case L3_CORAL_PIVOT:
+          if (intake.hasCoral()) {
+            yield SystemState.GOING_L3_CORAL_PIVOT;
+          } else {
+            yield SystemState.OFF;
+          }
+        case L3_ALGAE:
+          yield SystemState.GOING_L3_ALGAE;
+        case L4_CORAL_BATTERY:
+          if (intake.hasCoral()) {
+            yield SystemState.GOING_L4_CORAL_BATTERY;
+          } else {
+            yield SystemState.OFF;
+          }
+        case L4_CORAL_PIVOT:
+          if (intake.hasCoral()) {
+            yield SystemState.GOING_L4_CORAL_PIVOT;
+          } else {
+            yield SystemState.OFF;
+          }
+        case ALGAE_BARGE:
+          yield SystemState.GOING_ALGAE_BARGE;
+      };
   }
-
-  public boolean atGoal() {
-    return Math.abs(encoderLeft.getPosition() - elevatorSetpoint) < ElevatorConstants.elevatorTolerance;
+  private void applyState() {
+    switch (systemState) {
+      case GOING_L1:
+          elevatorSetpoint = ElevatorConstants.LevelOneSetpoint;
+          break;
+      case GOING_L2_CORAL:
+          elevatorSetpoint = ElevatorConstants.LevelTwoSetpoint;
+          break;
+      case GOING_L2_ALGAE:
+          elevatorSetpoint = ElevatorConstants.LevelTwoAlgaeSetpoint;
+          break;
+      case GOING_L3_ALGAE:
+          elevatorSetpoint = ElevatorConstants.LevelThreeAR;
+          break;
+      case GOING_L3_CORAL_BATTERY:
+          elevatorSetpoint = ElevatorConstants.LevelThreeSetpointM;
+          break;
+      case GOING_L3_CORAL_PIVOT:
+          elevatorSetpoint = ElevatorConstants.LevelThreeSetpointR;
+          break;
+      case GOING_L4_CORAL_BATTERY:
+          elevatorSetpoint = ElevatorConstants.LevelFourSetpoint;
+          break;
+      case GOING_L4_CORAL_PIVOT:
+          elevatorSetpoint = ElevatorConstants.LevelFourSetpoint;
+          break;
+      case GOING_ALGAE_BARGE:
+          elevatorSetpoint = ElevatorConstants.LevelFourSetpoint;
+          break;
+      case OFF:
+          elevatorSetpoint = 1;
+          break;
+      default:
+          break;
+  }
   }
 
   @Override
@@ -193,6 +279,8 @@ public class Elevator extends SubsystemBase {
     encoderPosition = -encoderLeft.getPosition();
     checkTunableValues();
     logValues();
+    systemState = changeCurrentSystemState();
+    applyState();
 
     // var ffOutput = ffElevate.calculateWithVelocities(nextVelocity,
     // nextNextVelocity);
